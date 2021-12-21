@@ -10,28 +10,23 @@ from helper_functions import *
 from matplotlib import gridspec
 
 st.set_page_config(
-    page_title='Q-Learning Models Demo',
+    page_title='Q-Learning App',
     page_icon='🤖', layout="centered")
+st.title('Q-Learning Model Demo')
 
-st.title('Q-Learning Models Demo')
 st.sidebar.subheader('Set-up:')
-
 speed = st.sidebar.selectbox(
     label='Speed of the simulation:',
     options=('Slow', 'Medium', 'Fast'),
     index=1)
-
 n_total = st.sidebar.slider('Number of trials (T):', min_value=50, max_value=500, step=50, value=200)
 
-# if st.sidebar.checkbox(
-#         'Freeze probability values?',
-#         help='If selected, probability values will be kept the same for each simulation.'):
 SEED = st.sidebar.number_input(
     label='Seed value:', min_value=1,
     max_value=1000, value=42, step=1,
     help='Each value of random seed produces a unique set of probability values.')
 rnd_generator = np.random.default_rng(SEED)
-bttn_text = 'Run the simulation!'
+
 if st.sidebar.checkbox(
         'Apply seed also for the agent choices?',
         help='If selected, the results will be the same for each simulation.'):
@@ -56,7 +51,8 @@ if option in ['Constant', 'Constant with switch at ⌈T/2⌉']:
                 help=helper_text,
                 value=str(list(rnd_generator.random(size=(3,)).round(2))))
 
-        probs = ast.literal_eval(probs)
+        # create a matrix of shape (n_trials, n_arms)
+        probs = ast.literal_eval(probs) # convert str to floats
         probs = np.repeat(
             np.reshape(probs, (1, 3)),
             n_total, axis=0)
@@ -90,10 +86,9 @@ else:
         help='Lower values result in a higher deviation, whereas higher values result in a more smooth curve.')
 
     scaler = MinMaxScaler(feature_range=(0, 1))
-
     probs = rnd_generator.normal(size=(n_total, 3)).cumsum(axis=0)
     probs = gaussian_filter1d(probs, sigma=smoothness, axis=0)
-    probs = scaler.fit_transform(probs)
+    probs = scaler.fit_transform(probs) # set to be in a [0,1] range
 
 reward_val = st.sidebar.slider(
     'Reward value:', min_value=1,
@@ -137,14 +132,14 @@ for i_agent in range(n_agents):
                  'options to zero.')
     }
 
-with open('desciption.md', mode='r') as f:
+with open('description.md', mode='r') as f:
     desc_text = f.read()
 
 st.markdown(desc_text)
 colors_opt = ['#82B223', '#2EA8D5', '#F5AF3D']
 
-E_r = (probs * reward_val) + (1 - probs) * punish_val
-best_option = E_r.argmax(axis=1)
+E_r = (probs * reward_val) + (1 - probs) * punish_val # expected value of an outcome
+best_option = E_r.argmax(axis=1) + 1
 
 fig = plt.figure(figsize=(10, 3))
 ax1 = fig.subplots()
@@ -152,22 +147,26 @@ for i in range(2, -1, -1):
     ax1.plot(probs[:, i], c=colors_opt[i], label=f'#{i+1}', lw=4)
 ax1.set_xlabel('Trial', fontweight='bold')
 ax1.set_ylabel('P(Reward)', fontweight='bold')
-ax1.set_title('Probability and Expected Value of Reward', fontweight='bold', fontsize=15,)
+ax1.set_title(
+    'Probability of the Reward\nand Expected Value of the Outcome',
+    fontweight='bold', fontsize=15,)
 ax1.legend(title="Option")
 
+# second y-axis on the right side
 ax2 = ax1.twinx()
 ax2.plot(E_r)
 for i in range(2, -1, -1):
     ax2.plot(E_r[:, i], c=colors_opt[i])
 ax2.set_xlabel('Trial', fontweight='bold')
-ax2.set_ylabel('E[Reward]', fontweight='bold')
+ax2.set_ylabel('E[Outcome]', fontweight='bold')
 
 st.pyplot(fig)
 
-if st.button(bttn_text):
+if st.button('Run the simulation!'):
 
+    # specify the speed of simulations
     if speed == 'Slow':
-        s = 100
+        s = 100 # number of steps to finish simulation for 1 agent
     elif speed == 'Medium':
         s = 30
     else:
@@ -176,10 +175,9 @@ if st.button(bttn_text):
     batch_size = int(np.ceil(n_total/s))
     sample_indexes = np.arange(0, n_total+batch_size, step=batch_size)
 
-
+    # status bar init
     progress_bar = st.progress(0)
     status_text = st.empty()
-
 
     for i_agent in range(n_agents):
         actions, gain, Qs = generate_agent_data(
@@ -223,6 +221,7 @@ if st.button(bttn_text):
         ax2 = plt.subplot(gs[2])
         ax2.set_ylim(0.5, 3.5)
         ax2.set_xlim(0, n_total+1)
+        # ax2.plot(best_option[:i], 'o', c='red', alpha=0.2)
         plot2, = ax2.plot(
             agent_data['trial'][:2],
             agent_data['choice'].astype(str)[:2],
@@ -273,30 +272,19 @@ if st.button(bttn_text):
                 ax4.axvline(
                     n_switch, lw=0.5, linestyle='--',
                     color='red', label='Switch')
-            # plot4 = ax4
-            # ax4.legend()
             ax4.spines['top'].set_visible(False)
             ax4.spines['right'].set_visible(False)
             ax4.set_xlabel('Trial', fontweight='bold')
             ax4.set_ylabel('Value\nFunction', fontweight='bold')
 
-
         the_plot = st.pyplot(plt)
-
-        # def init():  # give a clean slate to start
-        #     pass
-        #     # plot1.set_ydata([])
-        #     # plot2.set_ydata([])
-        #     # plot2[0].set_width(0)
-
-
-        # init()
 
         def animate(i):
             ax1.set_ylim(
                 agent_data['gain'][:i].cumsum().min()-20,
                 agent_data['gain'][:i].cumsum().max()+20)
             plot1.set_data(agent_data['trial'][:i], agent_data['gain'][:i].cumsum())
+            # ax2.plot(best_option[:i], 'o', c='red', alpha=0.2)
             plot2.set_data(agent_data['trial'][:i], agent_data['choice'][:i])
             z = agent_data[:i].groupby(['choice'], as_index=False)['subjID'].count()
             z.rename(columns={'subjID': 'count'}, inplace=True)
@@ -320,10 +308,6 @@ if st.button(bttn_text):
             status_text.text("%i%% Complete" % indx)
             progress_bar.progress(indx)
             time.sleep(0.001)
-
-        # fig = plt.figure()
-        # plt.plot(Qs)
-        # st.pyplot(fig)
 
     status_text.text("%i%% Complete" % 100)
     progress_bar.progress(100)
