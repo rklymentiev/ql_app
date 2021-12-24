@@ -91,12 +91,12 @@ else:
     probs = scaler.fit_transform(probs) # set to be in a [0,1] range
 
 reward_val = st.sidebar.slider(
-    'Reward value:', min_value=1,
+    'Reward value:', min_value=0,
     max_value=10, step=1, value=1)
 
 punish_val = st.sidebar.slider(
     'Punishment value:', min_value=-10,
-    max_value=-1, step=1, value=-1)
+    max_value=0, step=1, value=-1)
 
 plot_q = st.sidebar.checkbox('Include plot for value functions?', value=True)
 
