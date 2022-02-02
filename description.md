@@ -1,4 +1,4 @@
-Author: [**Rulan Klymentiev**](https://defme.xyz/)
+Author: [**Rulan Klymentiev**](https://rklymentiev.com/)
 
 Q-Learning is one of the most popular Reinforcement Learning models that has been used in the computational neuroscience field to model behavioral data. This app allows visual comparison of *simulated* agents' performance and the effect of specific parameters based on the modification of the Q-Learning model.
 
