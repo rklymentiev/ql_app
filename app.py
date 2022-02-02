@@ -25,7 +25,7 @@ SEED = st.sidebar.number_input(
     label='Seed value:', min_value=1,
     max_value=1000, value=42, step=1,
     help='Each value of random seed produces a unique set of probability values.')
-rnd_generator = np.random.default_rng(SEED)
+rnd_generator = np.random.default_rng(int(SEED))
 
 if st.sidebar.checkbox(
         'Apply seed also for the agent choices?',
